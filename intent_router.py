@@ -158,13 +158,13 @@ class IntentRouter:
             },
             {
                 "name": "polish_and_apply",
-                "description": "Polish and improve tasks - use when user says 'polish [tasks]', 'improve these tasks', 'clean up task names', etc. Applies actual changes with confirmation. Works with: 'these tasks', 'first task', 'all tasks', etc.",
+                "description": "Polish and improve tasks - use when user says 'polish [tasks]', 'improve these tasks', 'clean up task names', etc. Applies actual changes with confirmation. Works with: 'these tasks', 'first task', 'all tasks', numbered lists, etc.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "task_identifier": {
                             "type": "string",
-                            "description": "Which task(s) to polish: 'these tasks', 'first task', 'all tasks', 'tasks without dates', etc."
+                            "description": "Task identifier(s). Extract EXACTLY as user provides: 'these tasks', 'first task', 'all tasks', 'send email to iras', '1) task one 2) task two', etc. For numbered lists, preserve the full text with numbers."
                         },
                         "count": {
                             "type": "integer",

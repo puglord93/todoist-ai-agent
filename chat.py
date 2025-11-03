@@ -492,6 +492,11 @@ class TodoistChatAgent:
         elif "third" in identifier_lower and self.last_shown_tasks:
             return self.last_shown_tasks[2] if len(self.last_shown_tasks) > 2 else None
 
+        # Common stop words to ignore in matching
+        stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+                     'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'be', 'been',
+                     'how', 'its', 'it', 'this', 'that', 'these', 'those'}
+
         # Try to match from recently shown tasks first (for better context)
         for task in self.last_shown_tasks:
             task_content_lower = task.get("content", "").lower()
@@ -499,9 +504,9 @@ class TodoistChatAgent:
             if identifier_lower in task_content_lower:
                 return task
             # Also try matching key words (e.g., "amazon" matches "Amazon account unblock")
-            identifier_words = identifier_lower.split()
+            identifier_words = [w for w in identifier_lower.split() if w not in stop_words and len(w) > 2]
             if len(identifier_words) >= 2:
-                # Match if at least 2 words from identifier appear in task name
+                # Match if at least 2 significant words from identifier appear in task name
                 matches = sum(1 for word in identifier_words if word in task_content_lower)
                 if matches >= min(2, len(identifier_words)):
                     return task
@@ -513,7 +518,7 @@ class TodoistChatAgent:
             if identifier_lower in task_content_lower:
                 return task
             # Try multi-word matching
-            identifier_words = identifier_lower.split()
+            identifier_words = [w for w in identifier_lower.split() if w not in stop_words and len(w) > 2]
             if len(identifier_words) >= 2:
                 matches = sum(1 for word in identifier_words if word in task_content_lower)
                 if matches >= min(2, len(identifier_words)):
@@ -561,9 +566,18 @@ class TodoistChatAgent:
             return self.agent.get_tasks_filtered("no_date")
 
         # Try to match task names (e.g., "Amazon and Kwang IBKR")
-        if " and " in identifier_lower or "," in identifier_lower:
-            # Split by "and" or comma
-            task_names = [name.strip() for name in identifier_lower.replace(" and ", ",").split(",")]
+        # Also handle numbered lists like "1) task one 2) task two"
+        if " and " in identifier_lower or "," in identifier_lower or any(f"{i})" in identifier_lower for i in range(1, 10)):
+            # Handle numbered lists: "1) task 2) task" format
+            if any(f"{i})" in identifier_lower for i in range(1, 10)):
+                import re
+                # Split by numbered patterns like "1)", "2)", etc.
+                parts = re.split(r'\d+\)', identifier_lower)
+                task_names = [name.strip() for name in parts if name.strip()]
+            else:
+                # Split by "and" or comma
+                task_names = [name.strip() for name in identifier_lower.replace(" and ", ",").split(",")]
+
             matched_tasks = []
             for name in task_names:
                 task = self._identify_task(name)
