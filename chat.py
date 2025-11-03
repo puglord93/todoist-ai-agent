@@ -545,14 +545,20 @@ class TodoistChatAgent:
         if ("top" in identifier_lower or "first" in identifier_lower) and self.last_shown_tasks:
             return self.last_shown_tasks[:count]
 
-        # Handle "all"
-        if "all" in identifier_lower:
+        # Handle "all" or general task references
+        if "all" in identifier_lower or "my tasks" in identifier_lower:
             if "overdue" in identifier_lower:
                 return self.agent.get_tasks_filtered("overdue")
             elif "no date" in identifier_lower or "without date" in identifier_lower:
                 return self.agent.get_tasks_filtered("no_date")
+            elif "all tasks" in identifier_lower:
+                return self.agent.get_tasks_filtered("all")
             elif self.last_shown_tasks:
                 return self.last_shown_tasks
+
+        # Handle "tasks without dates" or similar
+        if "without" in identifier_lower and ("date" in identifier_lower or "dates" in identifier_lower):
+            return self.agent.get_tasks_filtered("no_date")
 
         # Try to match task names (e.g., "Amazon and Kwang IBKR")
         if " and " in identifier_lower or "," in identifier_lower:

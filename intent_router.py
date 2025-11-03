@@ -77,7 +77,7 @@ class IntentRouter:
             },
             {
                 "name": "polish_tasks",
-                "description": "Analyze task quality and show which tasks need polishing (quality report only - does not apply changes)",
+                "description": "Show quality report - use ONLY when user asks 'which tasks need polishing?' or 'show me low quality tasks'. Shows analysis without making changes.",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -158,13 +158,13 @@ class IntentRouter:
             },
             {
                 "name": "polish_and_apply",
-                "description": "Actually polish specific identified tasks and apply changes with confirmation (requires task identifiers like 'first task', 'top 3', etc.)",
+                "description": "Polish and improve tasks - use when user says 'polish [tasks]', 'improve these tasks', 'clean up task names', etc. Applies actual changes with confirmation. Works with: 'these tasks', 'first task', 'all tasks', etc.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "task_identifier": {
                             "type": "string",
-                            "description": "Which task(s) to polish: 'first task', 'top 3', 'all overdue', etc."
+                            "description": "Which task(s) to polish: 'these tasks', 'first task', 'all tasks', 'tasks without dates', etc."
                         },
                         "count": {
                             "type": "integer",
