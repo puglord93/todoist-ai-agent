@@ -572,6 +572,12 @@ class TodoistChatAgent:
             if matched_tasks:
                 return matched_tasks
 
+        # Try to match a single specific task by name
+        # This handles cases like "send email to iras" or "amazon account"
+        task = self._identify_task(identifier)
+        if task:
+            return [task]
+
         # Default to first N of last shown
         if self.last_shown_tasks:
             return self.last_shown_tasks[:count]
