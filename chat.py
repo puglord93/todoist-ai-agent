@@ -111,6 +111,8 @@ class TodoistChatAgent:
             self._handle_update_task(params)
         elif intent == "polish_and_apply":
             self._handle_polish_and_apply(params)
+        elif intent == "manage_labels":
+            self._handle_manage_labels(params)
         elif intent == "get_help":
             self._print_help()
         elif intent == "general_response":
@@ -162,15 +164,21 @@ class TodoistChatAgent:
                 print(f"✨ All tasks meet the quality threshold ({min_quality}%)!")
                 print(f"Average quality score: {quality_report['average_quality']}%")
             else:
-                print(f"Found {len(worst_tasks)} tasks below {min_quality}% quality:\n")
-                for i, task in enumerate(worst_tasks, 1):
-                    if task["percentage"] < min_quality:
-                        print(f"{i}. {task['task_content']}")
-                        print(f"   Quality: {task['percentage']}%")
-                        print(f"   Issues: {', '.join(task['issues'])}")
-                        print()
+                # Filter tasks below threshold
+                tasks_below_threshold = [t for t in worst_tasks if t["percentage"] < min_quality]
+                print(f"Found {len(tasks_below_threshold)} tasks below {min_quality}% quality:\n")
+                for i, task in enumerate(tasks_below_threshold, 1):
+                    print(f"{i}. {task['task_content']}")
+                    print(f"   Quality: {task['percentage']}%")
+                    print(f"   Issues: {', '.join(task['issues'])}")
+                    print()
 
-                print("\n💡 Tip: Use 'venv/bin/python3 interactive_polish.py' for interactive polishing")
+                # Store these tasks for potential follow-up commands
+                all_tasks = self.agent.client.fetch_tasks()
+                task_ids_to_polish = [t["task_id"] for t in tasks_below_threshold]
+                self.last_shown_tasks = [t for t in all_tasks if str(t.get("id")) in task_ids_to_polish]
+
+                print(f"\n💡 You can say 'polish these tasks' or 'polish the first 3' to improve them")
 
     def _handle_schedule(self, params: Dict[str, Any]):
         """Handle schedule_tasks intent."""
@@ -300,8 +308,13 @@ class TodoistChatAgent:
         # Find the task
         task = self._identify_task(task_identifier)
         if not task:
-            print(f"Could not find task: {task_identifier}")
-            print("Tip: First show tasks, then use 'first task', 'second task', etc.")
+            print(f"❌ Could not find task: '{task_identifier}'")
+            if self.last_shown_tasks:
+                task_names = [t.get("content", "")[:40] for t in self.last_shown_tasks[:3]]
+                print(f"💡 Recently shown tasks: {', '.join(task_names)}")
+                print("   Try using 'first task', 'second task', etc.")
+            else:
+                print("💡 Tip: First show tasks, then reference them by position or name")
             return
 
         # Build update dict
@@ -355,8 +368,11 @@ class TodoistChatAgent:
         tasks_to_polish = self._identify_tasks_for_polish(task_identifier, count)
 
         if not tasks_to_polish:
-            print(f"Could not find tasks matching: {task_identifier}")
-            print("Tip: First show tasks, then use 'first task', 'top 3', etc.")
+            print(f"❌ Could not find tasks matching: '{task_identifier}'")
+            if self.last_shown_tasks:
+                print(f"💡 Try: 'polish these {len(self.last_shown_tasks)} tasks' or 'polish the first task'")
+            else:
+                print("💡 Tip: First show tasks (e.g., 'show all tasks'), then polish them")
             return
 
         print(f"🎨 Polishing {len(tasks_to_polish)} task(s)...\n")
@@ -402,6 +418,60 @@ class TodoistChatAgent:
         else:
             print("\n❌ Updates cancelled.")
 
+    def _handle_manage_labels(self, params: Dict[str, Any]):
+        """Handle label management requests."""
+        action = params.get("action", "analyze")
+        task_identifier = params.get("task_identifier")
+
+        all_tasks = self.agent.client.fetch_tasks()
+
+        if action == "analyze":
+            # Analyze label usage across all tasks
+            label_stats = {}
+            for task in all_tasks:
+                for label in task.get("labels", []):
+                    if label not in label_stats:
+                        label_stats[label] = {"count": 0, "tasks": []}
+                    label_stats[label]["count"] += 1
+                    label_stats[label]["tasks"].append(task.get("content", "")[:50])
+
+            # Sort by count
+            sorted_labels = sorted(label_stats.items(), key=lambda x: x[1]["count"], reverse=True)
+
+            print("📊 Label Usage Analysis\n")
+            print("=" * 70)
+            print(f"Total labels: {len(sorted_labels)}\n")
+
+            # Find potentially insignificant labels (used only once or twice)
+            insignificant = [(label, info) for label, info in sorted_labels if info["count"] <= 2]
+
+            if insignificant:
+                print(f"⚠️  {len(insignificant)} labels used on 2 or fewer tasks:\n")
+                for label, info in insignificant[:10]:
+                    print(f"  • {label} ({info['count']} task{'s' if info['count'] > 1 else ''})")
+                    for task_name in info["tasks"]:
+                        print(f"     - {task_name}")
+                print()
+
+            print(f"✅ Most used labels:\n")
+            for label, info in sorted_labels[:10]:
+                print(f"  • {label}: {info['count']} tasks")
+
+            print("\n" + "=" * 70)
+            print("💡 You can say 'remove label Joseph from all tasks' to clean up")
+
+        elif action == "view":
+            # Show all labels
+            all_labels = set()
+            for task in all_tasks:
+                all_labels.update(task.get("labels", []))
+
+            print(f"🏷️  All Labels ({len(all_labels)})\n")
+            print("=" * 70)
+            for label in sorted(all_labels):
+                print(f"  • {label}")
+            print("=" * 70)
+
     def _identify_task(self, identifier: str) -> Optional[Dict[str, Any]]:
         """
         Identify a task from user input.
@@ -422,11 +492,32 @@ class TodoistChatAgent:
         elif "third" in identifier_lower and self.last_shown_tasks:
             return self.last_shown_tasks[2] if len(self.last_shown_tasks) > 2 else None
 
-        # Try to match by name
+        # Try to match from recently shown tasks first (for better context)
+        for task in self.last_shown_tasks:
+            task_content_lower = task.get("content", "").lower()
+            # Match if identifier is a substring of task name
+            if identifier_lower in task_content_lower:
+                return task
+            # Also try matching key words (e.g., "amazon" matches "Amazon account unblock")
+            identifier_words = identifier_lower.split()
+            if len(identifier_words) >= 2:
+                # Match if at least 2 words from identifier appear in task name
+                matches = sum(1 for word in identifier_words if word in task_content_lower)
+                if matches >= min(2, len(identifier_words)):
+                    return task
+
+        # Try to match from all tasks
         all_tasks = self.agent.client.fetch_tasks()
         for task in all_tasks:
-            if identifier_lower in task.get("content", "").lower():
+            task_content_lower = task.get("content", "").lower()
+            if identifier_lower in task_content_lower:
                 return task
+            # Try multi-word matching
+            identifier_words = identifier_lower.split()
+            if len(identifier_words) >= 2:
+                matches = sum(1 for word in identifier_words if word in task_content_lower)
+                if matches >= min(2, len(identifier_words)):
+                    return task
 
         return None
 
@@ -443,6 +534,13 @@ class TodoistChatAgent:
         """
         identifier_lower = identifier.lower()
 
+        # Handle "these", "those", "them" - refers to recently shown tasks
+        if any(word in identifier_lower for word in ["these", "those", "them", "they"]):
+            if self.last_shown_tasks:
+                # If a number is mentioned, use that, otherwise use all shown tasks
+                return self.last_shown_tasks[:count] if count > 1 else self.last_shown_tasks
+            return []
+
         # Handle "top N" or "first N"
         if ("top" in identifier_lower or "first" in identifier_lower) and self.last_shown_tasks:
             return self.last_shown_tasks[:count]
@@ -451,8 +549,22 @@ class TodoistChatAgent:
         if "all" in identifier_lower:
             if "overdue" in identifier_lower:
                 return self.agent.get_tasks_filtered("overdue")
+            elif "no date" in identifier_lower or "without date" in identifier_lower:
+                return self.agent.get_tasks_filtered("no_date")
             elif self.last_shown_tasks:
                 return self.last_shown_tasks
+
+        # Try to match task names (e.g., "Amazon and Kwang IBKR")
+        if " and " in identifier_lower or "," in identifier_lower:
+            # Split by "and" or comma
+            task_names = [name.strip() for name in identifier_lower.replace(" and ", ",").split(",")]
+            matched_tasks = []
+            for name in task_names:
+                task = self._identify_task(name)
+                if task and task not in matched_tasks:
+                    matched_tasks.append(task)
+            if matched_tasks:
+                return matched_tasks
 
         # Default to first N of last shown
         if self.last_shown_tasks:

@@ -173,6 +173,25 @@ class IntentRouter:
                     },
                     "required": ["task_identifier"]
                 }
+            },
+            {
+                "name": "manage_labels",
+                "description": "View, analyze, or manage task labels (consolidate, remove insignificant labels)",
+                "parameters": {
+                    "type": "object",
+                    "properties": {
+                        "action": {
+                            "type": "string",
+                            "enum": ["view", "analyze", "consolidate", "remove"],
+                            "description": "What to do with labels"
+                        },
+                        "task_identifier": {
+                            "type": "string",
+                            "description": "Which task(s) to manage labels for (optional, defaults to all)"
+                        }
+                    },
+                    "required": ["action"]
+                }
             }
         ]
 
