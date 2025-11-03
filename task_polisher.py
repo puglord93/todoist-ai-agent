@@ -130,7 +130,7 @@ Please analyze this task and provide improvements. Return ONLY a JSON object wit
   "polished_name": "Improved task name - should be clear, specific, and start with action verb",
   "polished_description": "Enhanced description with context, steps, or relevant details",
   "extracted_priority": 1-4 or null (1=lowest, 4=highest priority if mentioned in task),
-  "extracted_labels": ["list", "of", "suggested", "labels"]
+  "extracted_labels": []
 }}
 
 Guidelines:
@@ -140,7 +140,8 @@ Guidelines:
 4. Keep it concise but meaningful
 5. Only suggest changes if the current version is vague or unclear
 6. Extract priority hints from words like "urgent", "ASAP", "important"
-7. Suggest labels based on content (e.g., "work", "personal", "health", "urgent")
+7. **IMPORTANT: DO NOT suggest or add labels. Leave extracted_labels as an empty array []**
+8. The user manages labels manually with their own system
 
 Return only the JSON, no other text."""
 
