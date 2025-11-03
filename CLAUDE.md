@@ -27,6 +27,11 @@ This is a Todoist task management system with AI-powered features, OpenAI integr
 ### Quick CLI Tools
 - **today.py** - Quick view of today's tasks (overdue, due today, upcoming)
 - **list_tasks.py** - List all Todoist tasks
+- **daily_briefing.py** - Automated daily briefing (NEW - Nov 2024)
+  - Generates morning report with overdue, due today, and focus plan
+  - Can output to console, file, or email
+  - Designed for cron automation
+  - Run `./setup_cron.sh` to set up daily automation
 
 ### Core Scripts
 - **todoist_client.py** - Unified interface for Todoist operations (API, MCP, or mock)
@@ -46,6 +51,24 @@ Always use the virtual environment:
 ```bash
 venv/bin/python3 <script_name.py>
 ```
+
+### Automated Daily Briefing
+Set up daily automation for morning task briefings:
+```bash
+# Test the briefing manually
+venv/bin/python3 daily_briefing.py --test
+
+# Set up cron job (interactive)
+./setup_cron.sh
+
+# Manual run with all outputs
+venv/bin/python3 daily_briefing.py
+
+# Only save to file
+venv/bin/python3 daily_briefing.py --mode file
+```
+
+Output saved to `~/todoist_briefing.txt` by default (configurable via `BRIEFING_OUTPUT_PATH` in `.env`).
 
 ## Common User Requests & Actions
 

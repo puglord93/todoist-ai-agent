@@ -70,6 +70,31 @@ Features:
 - **Label analytics**: Find and consolidate insignificant labels
 - **Manual label control**: Polisher won't add labels automatically
 
+### Automated Daily Briefing (NEW!)
+Get your tasks delivered automatically every morning:
+```bash
+# Test the briefing
+venv/bin/python3 daily_briefing.py --test
+
+# Set up cron for daily automation
+./setup_cron.sh
+```
+
+The briefing includes:
+- Overdue and due today tasks
+- AI-generated focus plan (top 5 priorities)
+- Task quality summary
+- Saved to `~/todoist_briefing.txt` by default
+
+**Access from Windows:**
+```bash
+# Via SSH
+ssh your-mac "cat ~/todoist_briefing.txt"
+
+# Or save to Dropbox/Google Drive
+# Set BRIEFING_OUTPUT_PATH=~/Dropbox/todoist_briefing.txt in .env
+```
+
 ### Quick CLI Tools
 ```bash
 # View today's tasks (overdue, due today, upcoming)
@@ -77,6 +102,9 @@ venv/bin/python3 today.py
 
 # List all tasks
 venv/bin/python3 list_tasks.py
+
+# Generate daily briefing
+venv/bin/python3 daily_briefing.py
 ```
 
 ### Advanced Usage
@@ -131,9 +159,11 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 - `interactive_polish.py`: Interactive workflow for reviewing AI suggestions
 - `mcp_updater.py`: Update formatting helpers (legacy MCP support)
 
-### Entry Points
+### Automation & Entry Points
 - `chat.py`: Conversational CLI interface
 - `today.py`: Quick today's tasks view
+- `daily_briefing.py`: Automated daily briefing (NEW!)
+- `setup_cron.sh`: Cron automation setup helper (NEW!)
 - `main.py`: CLI for analysis and prioritization
 - `interactive_polish.py`: CLI for task polishing workflow
 
@@ -142,6 +172,7 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 ### 2024-11 - OpenAI Migration & Enhanced Chat Interface
 
 #### Latest Improvements (Nov 2024)
+- ✅ **Automated Daily Briefing** - Cron-scheduled morning reports with focus plan and quality summary
 - ✅ **Stop Word Filtering** - Ignores common words ("to", "from", "the", "how") for more accurate task matching
 - ✅ **Numbered List Support** - Parse "polish 1) task one 2) task two" format correctly
 - ✅ **Intent Routing Fixed** - Clear separation between quality reports and actual polishing actions
@@ -166,8 +197,12 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 
 ## Future Enhancements
 
+- [x] ~~Automated daily morning briefing~~ **DONE!** (Nov 2024)
+- [x] ~~Cron schedule for daily automation~~ **DONE!** (Nov 2024)
+- [ ] Conversation history persistence
+- [ ] Smart auto-apply for high-confidence polish suggestions
+- [ ] Weekly retrospective and velocity tracking
+- [ ] Slack/Telegram integration for notifications
+- [ ] Web dashboard for remote access
 - [ ] Google Calendar integration
-- [ ] Natural language task creation via voice/chat
-- [ ] Weekly planning and goal tracking
 - [ ] Automatic task breakdown for large projects
-- [ ] Integration with email/Slack for task capture
