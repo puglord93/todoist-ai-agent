@@ -77,7 +77,7 @@ class IntentRouter:
             },
             {
                 "name": "polish_tasks",
-                "description": "Polish task names and descriptions using AI",
+                "description": "Analyze task quality and show which tasks need polishing (quality report only - does not apply changes)",
                 "parameters": {
                     "type": "object",
                     "properties": {
@@ -158,7 +158,7 @@ class IntentRouter:
             },
             {
                 "name": "polish_and_apply",
-                "description": "Polish task(s) and apply the changes to Todoist (with confirmation)",
+                "description": "Actually polish specific identified tasks and apply changes with confirmation (requires task identifiers like 'first task', 'top 3', etc.)",
                 "parameters": {
                     "type": "object",
                     "properties": {
