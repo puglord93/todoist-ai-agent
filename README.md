@@ -55,6 +55,8 @@ Natural language examples:
 - "prioritize my tasks" or just `p`
 - "which tasks need polishing?" or `polish my tasks`
 - "polish the first task" or "polish Amazon and Kwang IBKR"
+- "polish the tasks 1) research kwang 2) resubmit docs" (numbered lists!)
+- "polish these tasks" (after showing tasks)
 - "analyze my labels" or "show label usage"
 - "help me add due dates" or just `schedule`
 - "categorize tasks" or just `categorize`
@@ -62,8 +64,11 @@ Natural language examples:
 Features:
 - **Context-aware**: Remember recently shown tasks ("polish these tasks")
 - **Fuzzy matching**: "Amazon unblock" matches "Amazon account unblock - resubmit..."
+- **Stop word filtering**: Ignores common words like "the", "to", "from" for accurate matching
+- **Numbered list support**: "polish 1) task one 2) task two" works perfectly
 - **Helpful feedback**: Clear error messages with suggestions
 - **Label analytics**: Find and consolidate insignificant labels
+- **Manual label control**: Polisher won't add labels automatically
 
 ### Quick CLI Tools
 ```bash
@@ -135,11 +140,21 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 ## Recent Updates
 
 ### 2024-11 - OpenAI Migration & Enhanced Chat Interface
+
+#### Latest Improvements (Nov 2024)
+- ✅ **Stop Word Filtering** - Ignores common words ("to", "from", "the", "how") for more accurate task matching
+- ✅ **Numbered List Support** - Parse "polish 1) task one 2) task two" format correctly
+- ✅ **Intent Routing Fixed** - Clear separation between quality reports and actual polishing actions
+- ✅ **Label Control** - Disabled automatic label generation; users maintain full control over manual labeling
+- ✅ **Multi-Word Matching** - Only significant words count for fuzzy matching (2+ chars, no stop words)
+- ✅ **Better Error Messages** - Shows what was searched for, suggests recently shown tasks
+
+#### Core Features (Nov 2024)
 - ✅ **OpenAI Integration** - Migrated from Anthropic to OpenAI GPT-4o-mini
 - ✅ **Direct Todoist API** - Standalone operation without MCP dependency
 - ✅ **Fuzzy Task Matching** - Multi-word matching, partial names work better
 - ✅ **Contextual References** - "polish these tasks" after showing tasks
-- ✅ **Label Management** - Analyze and identify insignificant labels
+- ✅ **Label Management** - Analyze label usage and identify insignificant labels
 - ✅ **Improved Feedback** - Clearer error messages with suggestions
 
 ### 2024-10 - Initial Release

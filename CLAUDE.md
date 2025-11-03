@@ -112,41 +112,61 @@ venv/bin/python3 interactive_polish.py --mode schedule
 ### Enhanced Chat Interface
 The chat interface ([chat.py](chat.py)) now has significantly improved task handling:
 
-**1. Fuzzy Task Matching**
+**1. Fuzzy Task Matching with Stop Word Filtering**
 - Multi-word matching: "Amazon unblock" correctly matches "Amazon account unblock - resubmit identity documents"
 - Substring matching: Partial task names work much better
-- Multi-word scoring: If 2+ words from your search appear in the task name, it's a match
-- Implementation: Enhanced `_identify_task()` method in [chat.py:171-222](chat.py#L171-L222)
+- **Stop word filtering**: Ignores common words like "the", "to", "from", "how" for more accurate matching
+- Multi-word scoring: If 2+ significant words from your search appear in the task name, it's a match
+- Implementation: Enhanced `_identify_task()` method in [chat.py:462-514](chat.py#L462-L514)
 
-**2. Contextual References**
+**2. Numbered List Support**
+- Parse numbered lists: "polish 1) task one 2) task two" correctly identifies both tasks
+- Regex-based splitting by `\d+\)` pattern
+- Each numbered item treated as separate task identifier
+- Works with natural language: "polish the tasks 1) research kwang 2) resubmit docs"
+- Implementation: [chat.py:555-574](chat.py#L555-L574)
+
+**3. Intent Routing Improvements**
+- Clear separation between `polish_tasks` (quality report) and `polish_and_apply` (actual changes)
+- Function descriptions guide OpenAI to choose correct intent
+- `polish_tasks`: Only for "which tasks need polishing?" queries
+- `polish_and_apply`: For actual polishing like "polish these tasks"
+- Implementation: [intent_router.py:78-176](intent_router.py#L78-L176)
+
+**4. Contextual References**
 - After showing tasks, you can say "polish these tasks" or "polish the first 3"
 - The system remembers `last_shown_tasks` and uses context for follow-up commands
 - Pronouns work: "these", "those", "them" all reference previously shown tasks
-- Implementation: Enhanced `_identify_tasks_for_polish()` in [chat.py:224-311](chat.py#L224-L311)
+- Implementation: Enhanced `_identify_tasks_for_polish()` in [chat.py:516-586](chat.py#L516-L586)
 
-**3. Label Management**
+**5. Label Management**
 - New `manage_labels` intent handles label analysis requests
 - "analyze my labels" shows usage statistics
 - Identifies insignificant labels (used on ≤2 tasks)
 - Shows most-used labels and suggests cleanup
-- Implementation: `_handle_manage_labels()` in [chat.py:447-479](chat.py#L447-L479)
-- Function definition: [intent_router.py:177-196](intent_router.py#L177-L196)
+- **Disabled automatic label generation**: Polishing no longer adds labels automatically
+- User maintains full control over manual labeling system
+- Implementation: `_handle_manage_labels()` in [chat.py:408-460](chat.py#L408-L460)
+- Function definition: [intent_router.py:177-195](intent_router.py#L177-L195)
 
-**4. Improved Error Messages**
+**6. Improved Error Messages**
 - When task not found, shows what was searched for (in quotes)
 - Suggests recently shown tasks as alternatives
 - Context-appropriate tips based on the situation
 - Example: "Could not find task 'amazon'. Recently shown tasks: 1. Submit ATUM..."
 
 ### Files Modified
-- **chat.py** - Main interface improvements
-- **intent_router.py** - Added `manage_labels` function definition
-- **task_updater.py** - Safe update preview system (already existed, now better integrated)
+- **chat.py** - Main interface improvements, task matching, numbered lists, stop words
+- **intent_router.py** - Clearer function descriptions, numbered list support
+- **task_polisher.py** - Disabled automatic label generation
+- **task_updater.py** - Safe update preview system
 - **agent.py** - Supports all the new features through existing methods
 
 ### Testing
 All improvements were based on real user CLI logs showing:
-- Task identification failures after showing tasks
-- Wrong tasks being polished due to poor matching
-- "polish my tasks" showing no actionable output
-- Label management requests not being handled
+- Task identification failures after showing tasks → Fixed with specific task name matching
+- Wrong tasks being polished due to poor matching → Fixed with stop word filtering
+- "polish my tasks" showing no actionable output → Fixed with intent routing
+- Label management requests not being handled → Added manage_labels intent
+- Numbered list not working → Added regex parsing for "1) task 2) task" format
+- Too many labels being added → Disabled automatic label generation
