@@ -1,18 +1,17 @@
 # Todoist AI Agent
 
-An intelligent assistant that helps manage your Todoist tasks by analyzing urgency, importance, and generating prioritized daily focus plans.
+An intelligent assistant powered by OpenAI that helps manage your Todoist tasks through natural language conversation, smart prioritization, and AI-powered task improvements.
 
 ## Features
 
-- **Conversational Chat Interface** (NEW!): Natural language task management - just chat with your tasks!
+- **Conversational Chat Interface** (NEW!): Talk to your tasks in natural language - powered by OpenAI GPT-4o-mini
 - **Task Analysis**: Evaluates tasks based on urgency, importance, and labels
 - **Smart Prioritization**: Uses the Eisenhower Matrix and other heuristics
 - **Daily Focus Plans**: Generates actionable daily task lists
-- **AI-Powered Task Polishing**: Automatically improve vague task names and descriptions
-- **Smart Due Date Inference**: Suggest due dates based on task content
+- **AI-Powered Task Polishing**: OpenAI improves vague task names and descriptions
+- **Smart Due Date Inference**: AI suggests due dates based on task content
 - **Task Quality Scoring**: Identify tasks needing attention (0-100 score)
 - **Label Management** (NEW!): Analyze label usage and identify insignificant labels
-- **MCP Integration**: Apply updates directly to Todoist via Claude Code
 - **Interactive Workflow**: Review and approve AI suggestions before applying
 
 ## Setup
@@ -25,16 +24,23 @@ source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. **Set up Anthropic API key (for polish features):**
+2. **Configure API keys:**
+
+Create a `.env` file in the project root:
 ```bash
-export ANTHROPIC_API_KEY="your-api-key-here"
-# Or add to ~/.zshrc for persistence
+# Required: OpenAI API for natural language processing
+OPENAI_API_KEY="your-openai-api-key-here"
+
+# Required: Todoist API for task management
+TODOIST_API_TOKEN="your-todoist-api-token-here"
+
+# Optional: OpenAI model (defaults to gpt-4o-mini)
+OPENAI_MODEL="gpt-4o-mini"
 ```
 
-3. **MCP Connection (CONFIGURED ✅):**
-   - Todoist MCP server is configured in `~/.cursor/mcp.json`
-   - API token is set
-   - Restart Cursor/Claude Code to activate
+**Get your API keys:**
+- **OpenAI API**: Get from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
+- **Todoist API**: Get from [todoist.com/app/settings/integrations/developer](https://todoist.com/app/settings/integrations/developer)
 
 ## Usage
 
@@ -68,20 +74,21 @@ venv/bin/python3 today.py
 venv/bin/python3 list_tasks.py
 ```
 
-### With Mock Data (for testing)
+### Advanced Usage
+
+**With Mock Data (for testing):**
 ```bash
 ./run.sh --mock
 ./run.sh --mock --full    # Full report
 ./run.sh --mock --top 3   # Top 3 priorities
 ```
 
-### With Real Todoist Data (via Claude)
-Ask Claude Code:
+**Direct CLI (legacy):**
+```bash
+venv/bin/python3 main.py              # Generate focus plan
+venv/bin/python3 main.py --full       # Full report
+venv/bin/python3 main.py --top 3      # Top 3 priorities
 ```
-"Fetch my Todoist tasks and analyze them with the AI agent"
-```
-
-**See [HOWTO_USE_WITH_MCP.md](HOWTO_USE_WITH_MCP.md) for detailed MCP usage instructions.**
 
 ### Polish Your Tasks
 ```bash
@@ -103,21 +110,21 @@ Ask Claude Code:
 ## Architecture
 
 ### Core Engine
-- `todoist_client.py`: Interface for Todoist operations (MCP-ready)
+- `todoist_client.py`: Interface for Todoist API operations
 - `task_analyzer.py`: Task analysis and scoring logic
 - `prioritizer.py`: Prioritization algorithms and focus plan generation
 - `agent.py`: Main agent orchestrator
 
-### Conversational Interface
+### Conversational Interface (OpenAI-powered)
 - `chat.py`: Natural language chat interface (RECOMMENDED!)
-- `intent_router.py`: OpenAI-powered intent detection and routing
+- `intent_router.py`: OpenAI GPT-4o-mini for intent detection and routing
 - `task_updater.py`: Safe task updates with preview and rollback
 
-### Polish Features
-- `task_polisher.py`: AI-powered task name/description enhancement
+### AI Features (OpenAI-powered)
+- `task_polisher.py`: OpenAI-powered task name/description enhancement
 - `smart_scheduler.py`: Due date inference from task content
-- `mcp_updater.py`: Update formatting and MCP integration helpers
-- `interactive_polish.py`: Interactive workflow for reviewing suggestions
+- `interactive_polish.py`: Interactive workflow for reviewing AI suggestions
+- `mcp_updater.py`: Update formatting helpers (legacy MCP support)
 
 ### Entry Points
 - `chat.py`: Conversational CLI interface
@@ -127,7 +134,9 @@ Ask Claude Code:
 
 ## Recent Updates
 
-### 2024-11 - Enhanced Chat Interface
+### 2024-11 - OpenAI Migration & Enhanced Chat Interface
+- ✅ **OpenAI Integration** - Migrated from Anthropic to OpenAI GPT-4o-mini
+- ✅ **Direct Todoist API** - Standalone operation without MCP dependency
 - ✅ **Fuzzy Task Matching** - Multi-word matching, partial names work better
 - ✅ **Contextual References** - "polish these tasks" after showing tasks
 - ✅ **Label Management** - Analyze and identify insignificant labels
@@ -138,7 +147,7 @@ Ask Claude Code:
 - ✅ **Smart Due Date Inference** - Auto-suggest due dates from content
 - ✅ **Task Quality Scoring** - Identify tasks needing improvement
 - ✅ **Interactive Update Workflow** - Review before applying changes
-- ✅ **MCP Update Integration** - Apply changes via Claude Code
+- ✅ **Conversational Interface** - Natural language chat with tasks
 
 ## Future Enhancements
 
