@@ -32,6 +32,11 @@ This is a Todoist task management system with AI-powered features, OpenAI integr
   - Can output to console, file, or email
   - Designed for cron automation
   - Run `./setup_cron.sh` to set up daily automation
+- **auto_polish.py** - Automated task polishing (NEW - Nov 2024)
+  - Automatically improves low-quality tasks on schedule
+  - Safety features: quality threshold, rate limiting, audit logging
+  - Dry-run mode for testing
+  - Run `./setup_cron.sh` to set up automation
 
 ### Core Scripts
 - **todoist_client.py** - Unified interface for Todoist operations (API, MCP, or mock)
@@ -69,6 +74,41 @@ venv/bin/python3 daily_briefing.py --mode file
 ```
 
 Output saved to `~/todoist_briefing.txt` by default (configurable via `BRIEFING_OUTPUT_PATH` in `.env`).
+
+### Automated Task Polishing
+Set up scheduled automatic task improvements:
+```bash
+# Test with dry-run first (no changes applied)
+venv/bin/python3 auto_polish.py --dry-run
+
+# Enable in .env
+# AUTO_POLISH_ENABLED=true
+
+# Set up cron job (interactive)
+./setup_cron.sh
+# Choose option 2 (Auto-polish) or 3 (Both)
+
+# Manual run (if enabled)
+venv/bin/python3 auto_polish.py
+
+# Force run even if disabled
+venv/bin/python3 auto_polish.py --force
+```
+
+**Configuration in .env:**
+```bash
+AUTO_POLISH_ENABLED=false             # Must be true to run automatically
+AUTO_POLISH_QUALITY_THRESHOLD=40      # Only polish tasks below 40% quality
+AUTO_POLISH_MAX_TASKS=5               # Max 5 tasks per run (safety)
+AUTO_POLISH_LOG_PATH=~/todoist_auto_polish.log
+```
+
+**Safety Features:**
+- Quality threshold filtering (default: only polish tasks <40%)
+- Rate limiting (max 5 tasks per run prevents mass changes)
+- Detailed audit logging with rollback data
+- Dry-run mode for testing without applying changes
+- Change preview before application
 
 ## Common User Requests & Actions
 
@@ -177,6 +217,57 @@ The chat interface ([chat.py](chat.py)) now has significantly improved task hand
 - Suggests recently shown tasks as alternatives
 - Context-appropriate tips based on the situation
 - Example: "Could not find task 'amazon'. Recently shown tasks: 1. Submit ATUM..."
+
+**7. Conversation History Persistence** (Nov 2024)
+- Chat history automatically saved to `~/.todoist_chat_history.json`
+- Loads previous conversations on startup
+- Maintains context across multiple sessions
+- Clear with 'clear' or 'reset' command
+- Implementation: `_load_history()`, `_save_history()` in [chat.py:850-872](chat.py#L850-L872)
+
+**8. Intelligent Conversational Fallback** (Nov 2024)
+- Uses OpenAI GPT-4o-mini for unclear/edge case requests
+- Provides helpful responses instead of "I don't understand"
+- Asks clarifying questions when intent is ambiguous
+- Suggests alternatives when feature isn't available
+- Temperature 0.7 for natural, friendly conversation
+- Implementation: `_conversational_fallback()` in [chat.py:874-928](chat.py#L874-L928)
+- Examples:
+  - User: "tell me a joke" → AI actually tells a joke
+  - User: "organize my stuff" → AI asks clarifying questions
+  - User: "delete all my tasks" → AI explains limitations and offers alternatives
+
+**9. Enhanced Error Handling** (Nov 2024)
+- Try-catch wrapper around all intent handlers
+- Graceful recovery from exceptions
+- Shows friendly error message + uses conversational fallback
+- Never crashes the chat session
+- Still saves history even after errors
+- Implementation: [chat.py:115-159](chat.py#L115-L159)
+
+**10. Interactive Due Date Scheduling** (Nov 2024)
+- Enhanced `schedule_due_dates` handler with approval flow
+- Shows AI reasoning and confidence for each suggestion
+- Interactive y/n/q approval for each task
+- Batch application at the end
+- Success/failure reporting
+- Implementation: `_handle_schedule_due_dates()` in [chat.py:183-293](chat.py#L183-L293)
+
+**11. AI Label Suggestions** (Nov 2024)
+- New "suggest" action in `manage_labels` intent
+- Suggests 1-2 labels for tasks without labels
+- Prefers existing labels to avoid label sprawl
+- Shows reasoning for each suggestion
+- Interactive y/n/q approval
+- Implementation: Enhanced `_handle_manage_labels()` in [chat.py:562-677](chat.py#L562-L677)
+- Intent definition: [intent_router.py:177-199](intent_router.py#L177-L199)
+
+**12. Enhanced Categorization Display** (Nov 2024)
+- Handles "all" parameter to show all Eisenhower quadrants
+- Displays first 5 tasks per quadrant with priority scores
+- Better visualization with emoji indicators
+- Shows task count per quadrant
+- Implementation: Enhanced `_handle_categorize()` in [chat.py:299-356](chat.py#L299-L356)
 
 ### Files Modified
 - **chat.py** - Main interface improvements, task matching, numbered lists, stop words

@@ -9,25 +9,29 @@ from datetime import datetime, timedelta
 import re
 import os
 import json
-from anthropic import Anthropic
+from openai import OpenAI
+from dotenv import load_dotenv
 import pytz
+
+load_dotenv()
 
 
 class SmartScheduler:
     """AI-powered due date inference and scheduling."""
 
-    def __init__(self, api_key: Optional[str] = None):
+    def __init__(self, api_key: Optional[str] = None, model: Optional[str] = None):
         """
         Initialize the smart scheduler.
 
         Args:
-            api_key: Anthropic API key (defaults to ANTHROPIC_API_KEY env var)
+            api_key: OpenAI API key (defaults to OPENAI_API_KEY env var)
+            model: Model to use (defaults to OPENAI_MODEL env var or gpt-4o-mini)
         """
-        self.api_key = api_key or os.getenv("ANTHROPIC_API_KEY")
+        self.api_key = api_key or os.getenv("OPENAI_API_KEY")
         self.client = None
         if self.api_key:
-            self.client = Anthropic(api_key=self.api_key)
-            self.model = "claude-3-5-sonnet-20241022"
+            self.client = OpenAI(api_key=self.api_key)
+            self.model = model or os.getenv("OPENAI_MODEL", "gpt-4o-mini")
 
         self.today = datetime.now(pytz.UTC)
 
@@ -162,16 +166,17 @@ If there's no clear timeframe, return {{"should_have_due_date": false, "suggeste
 Return only JSON, no other text."""
 
         try:
-            response = self.client.messages.create(
+            response = self.client.chat.completions.create(
                 model=self.model,
                 max_tokens=512,
                 messages=[{
                     "role": "user",
                     "content": prompt
-                }]
+                }],
+                response_format={"type": "json_object"}
             )
 
-            result_text = response.content[0].text
+            result_text = response.choices[0].message.content
             result = json.loads(result_text)
 
             if result.get("should_have_due_date") and result.get("suggested_date"):

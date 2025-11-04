@@ -95,15 +95,19 @@ class IntentRouter:
                 }
             },
             {
-                "name": "schedule_tasks",
-                "description": "Suggest or add due dates to tasks",
+                "name": "schedule_due_dates",
+                "description": "AI-powered due date scheduling - use when user says 'add due dates', 'schedule tasks', 'help me set deadlines', 'suggest due dates', 'update due dates', etc. Generates AI suggestions and applies them with user approval.",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "scope": {
                             "type": "string",
-                            "enum": ["no_date", "all"],
-                            "description": "Which tasks need due dates"
+                            "enum": ["no_date", "all", "specific"],
+                            "description": "Which tasks to schedule"
+                        },
+                        "task_identifier": {
+                            "type": "string",
+                            "description": "Specific task(s) to schedule (optional, for 'specific' scope)"
                         }
                     },
                     "required": ["scope"]
@@ -176,14 +180,14 @@ class IntentRouter:
             },
             {
                 "name": "manage_labels",
-                "description": "View, analyze, or manage task labels (consolidate, remove insignificant labels)",
+                "description": "View, analyze, or manage task labels (consolidate, remove insignificant labels, suggest labels for unlabeled tasks)",
                 "parameters": {
                     "type": "object",
                     "properties": {
                         "action": {
                             "type": "string",
-                            "enum": ["view", "analyze", "consolidate", "remove"],
-                            "description": "What to do with labels"
+                            "enum": ["view", "analyze", "consolidate", "remove", "suggest"],
+                            "description": "What to do with labels. Use 'suggest' to add labels to tasks without labels."
                         },
                         "task_identifier": {
                             "type": "string",

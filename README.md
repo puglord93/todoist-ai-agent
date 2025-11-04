@@ -95,6 +95,34 @@ ssh your-mac "cat ~/todoist_briefing.txt"
 # Set BRIEFING_OUTPUT_PATH=~/Dropbox/todoist_briefing.txt in .env
 ```
 
+### Automated Task Polishing (NEW!)
+Automatically improve low-quality tasks on schedule:
+```bash
+# Test with dry-run first (preview only, no changes)
+venv/bin/python3 auto_polish.py --dry-run
+
+# Enable in .env
+AUTO_POLISH_ENABLED=true
+
+# Set up cron automation
+./setup_cron.sh
+# Choose option 2 (Auto-polish) or 3 (Both)
+```
+
+**Safety Features:**
+- Only polishes tasks below quality threshold (default: 40%)
+- Rate limited (max 5 tasks per run by default)
+- Detailed audit logging with rollback data
+- Dry-run mode for safe testing
+
+**Configuration in .env:**
+```bash
+AUTO_POLISH_ENABLED=true              # Enable/disable
+AUTO_POLISH_QUALITY_THRESHOLD=40      # Only polish tasks below 40%
+AUTO_POLISH_MAX_TASKS=5               # Max tasks per run
+AUTO_POLISH_LOG_PATH=~/todoist_auto_polish.log
+```
+
 ### Quick CLI Tools
 ```bash
 # View today's tasks (overdue, due today, upcoming)
@@ -163,6 +191,7 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 - `chat.py`: Conversational CLI interface
 - `today.py`: Quick today's tasks view
 - `daily_briefing.py`: Automated daily briefing (NEW!)
+- `auto_polish.py`: Automated task polishing (NEW!)
 - `setup_cron.sh`: Cron automation setup helper (NEW!)
 - `main.py`: CLI for analysis and prioritization
 - `interactive_polish.py`: CLI for task polishing workflow
@@ -172,6 +201,12 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 ### 2024-11 - OpenAI Migration & Enhanced Chat Interface
 
 #### Latest Improvements (Nov 2024)
+- ✅ **Conversation History Persistence** - Chat history saved across sessions to `~/.todoist_chat_history.json`
+- ✅ **Intelligent Conversational Fallback** - OpenAI-powered responses for edge cases and unclear requests
+- ✅ **Enhanced Error Handling** - Graceful recovery from errors with helpful AI suggestions
+- ✅ **Interactive Due Date Scheduling** - AI suggestions with reasoning, confidence, and approval flow
+- ✅ **AI Label Suggestions** - Smart label recommendations for unlabeled tasks with reasoning
+- ✅ **Automated Task Polishing** - Scheduled automatic improvements for low-quality tasks with safety features
 - ✅ **Automated Daily Briefing** - Cron-scheduled morning reports with focus plan and quality summary
 - ✅ **Stop Word Filtering** - Ignores common words ("to", "from", "the", "how") for more accurate task matching
 - ✅ **Numbered List Support** - Parse "polish 1) task one 2) task two" format correctly
@@ -199,8 +234,8 @@ venv/bin/python3 main.py --top 3      # Top 3 priorities
 
 - [x] ~~Automated daily morning briefing~~ **DONE!** (Nov 2024)
 - [x] ~~Cron schedule for daily automation~~ **DONE!** (Nov 2024)
-- [ ] Conversation history persistence
-- [ ] Smart auto-apply for high-confidence polish suggestions
+- [x] ~~Automated task polishing on schedule~~ **DONE!** (Nov 2024)
+- [x] ~~Conversation history persistence~~ **DONE!** (Nov 2024)
 - [ ] Weekly retrospective and velocity tracking
 - [ ] Slack/Telegram integration for notifications
 - [ ] Web dashboard for remote access

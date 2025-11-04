@@ -7,10 +7,13 @@ Interactive chat interface for managing Todoist tasks using natural language.
 
 import sys
 import os
-from typing import Dict, Any, List
+import json
+from pathlib import Path
+from typing import Dict, Any, List, Optional
 from agent import TodoistAIAgent
 from intent_router import IntentRouter
 from datetime import datetime
+from openai import OpenAI
 
 
 class TodoistChatAgent:
@@ -23,6 +26,15 @@ class TodoistChatAgent:
             self.agent = TodoistAIAgent(use_mock=False)
             self.router = IntentRouter()
             self.last_shown_tasks = []  # Track tasks shown to user for context
+
+            # Initialize OpenAI client for conversational fallback
+            self.openai_client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+            self.openai_model = os.getenv("OPENAI_MODEL", "gpt-4o-mini")
+
+            # Conversation history persistence
+            self.history_file = Path.home() / ".todoist_chat_history.json"
+            self._load_history()
+
             print("✅ Ready!\n")
         except Exception as e:
             print(f"❌ Error initializing: {e}")
@@ -49,6 +61,9 @@ class TodoistChatAgent:
                 # Check for clear command
                 if user_input.lower() in ['clear', 'reset']:
                     self.router.clear_history()
+                    # Also delete the history file
+                    if self.history_file.exists():
+                        self.history_file.unlink()
                     print("🧹 Conversation history cleared!")
                     continue
 
@@ -97,28 +112,51 @@ class TodoistChatAgent:
 
         print(f"\n🤖 Assistant: ", end="")
 
-        if intent == "show_tasks":
-            self._handle_show_tasks(params)
-        elif intent == "prioritize_tasks":
-            self._handle_prioritize(params)
-        elif intent == "polish_tasks":
-            self._handle_polish(params)
-        elif intent == "schedule_tasks":
-            self._handle_schedule(params)
-        elif intent == "categorize_tasks":
-            self._handle_categorize(params)
-        elif intent == "update_task":
-            self._handle_update_task(params)
-        elif intent == "polish_and_apply":
-            self._handle_polish_and_apply(params)
-        elif intent == "manage_labels":
-            self._handle_manage_labels(params)
-        elif intent == "get_help":
-            self._print_help()
-        elif intent == "general_response":
-            print(intent_result.get("response", "I'm not sure how to help with that."))
-        else:
-            print("I'm not sure what you'd like me to do. Type 'help' for available commands.")
+        try:
+            if intent == "show_tasks":
+                self._handle_show_tasks(params)
+            elif intent == "prioritize_tasks":
+                self._handle_prioritize(params)
+            elif intent == "polish_tasks":
+                self._handle_polish(params)
+            elif intent == "schedule_tasks":
+                self._handle_schedule(params)
+            elif intent == "schedule_due_dates":
+                self._handle_schedule_due_dates(params)
+            elif intent == "categorize_tasks":
+                self._handle_categorize(params)
+            elif intent == "update_task":
+                self._handle_update_task(params)
+            elif intent == "polish_and_apply":
+                self._handle_polish_and_apply(params)
+            elif intent == "manage_labels":
+                self._handle_manage_labels(params)
+            elif intent == "get_help":
+                self._print_help()
+            elif intent == "general_response":
+                # Use conversational fallback for better responses
+                response = self._conversational_fallback(user_input)
+                print(response)
+            elif intent == "error":
+                # Handle errors with conversational fallback
+                response = self._conversational_fallback(user_input)
+                print(response)
+            else:
+                # Unknown intent - use conversational fallback
+                response = self._conversational_fallback(user_input)
+                print(response)
+
+            # Save history after successful interaction
+            if intent not in ["error"]:
+                self._save_history()
+
+        except Exception as e:
+            print(f"\n\n⚠️  Oops! Something went wrong: {e}")
+            print("\n💡 Let me try to help anyway...")
+            # Use conversational fallback to recover gracefully
+            response = self._conversational_fallback(f"I tried to {intent} but got an error: {e}. How can I help you?")
+            print(f"\n{response}")
+            self._save_history()
 
     def _handle_show_tasks(self, params: Dict[str, Any]):
         """Handle show_tasks intent."""
@@ -180,28 +218,100 @@ class TodoistChatAgent:
 
                 print(f"\n💡 You can say 'polish these tasks' or 'polish the first 3' to improve them")
 
-    def _handle_schedule(self, params: Dict[str, Any]):
-        """Handle schedule_tasks intent."""
+    def _handle_schedule_due_dates(self, params: Dict[str, Any]):
+        """Handle schedule_due_dates intent with AI suggestions and confirmation."""
         scope = params.get("scope", "no_date")
+        task_identifier = params.get("task_identifier")
 
-        print("Checking tasks without due dates...\n")
-
-        tasks_no_date = self.agent.get_tasks_filtered("no_date")
-
-        if not tasks_no_date:
-            print("✅ All tasks have due dates!")
+        # Get tasks to schedule
+        if scope == "specific" and task_identifier:
+            tasks_to_schedule = self._identify_tasks_for_polish(task_identifier, count=10)
+        elif scope == "no_date":
+            tasks_to_schedule = self.agent.get_tasks_filtered("no_date")
         else:
-            print(f"Found {len(tasks_no_date)} tasks without due dates:\n")
-            for i, task in enumerate(tasks_no_date[:10], 1):
-                print(f"{i}. {task.get('content', '')}")
-                if task.get('labels'):
-                    print(f"   Labels: {', '.join(task['labels'])}")
+            # Get all tasks without dates first
+            tasks_to_schedule = self.agent.get_tasks_filtered("no_date")
 
-            print("\n💡 Tip: Use 'venv/bin/python3 interactive_polish.py --mode schedule' to add due dates")
+        if not tasks_to_schedule:
+            print("✅ All tasks already have due dates!")
+            return
+
+        print(f"📅 Scheduling {len(tasks_to_schedule)} task(s)...\n")
+
+        # Generate AI suggestions
+        suggestions = self.agent.scheduler.suggest_due_dates_batch(tasks_to_schedule)
+
+        if not suggestions:
+            print("✨ Unable to generate due date suggestions for these tasks.")
+            return
+
+        # Show suggestions with interactive approval
+        approved_updates = []
+        for i, suggestion in enumerate(suggestions, 1):
+            print(f"\n{'='*70}")
+            print(f"Task {i}/{len(suggestions)}")
+            print('='*70)
+            print(f"📝 Task: {suggestion['task_content']}")
+            print(f"\n📅 Suggested date: {suggestion['suggested_date']}")
+            print(f"💡 Reasoning: {suggestion.get('reasoning', suggestion.get('source', 'N/A'))}")
+            print(f"Confidence: {suggestion.get('confidence', 'medium')}")
+
+            # Ask for confirmation
+            while True:
+                choice = input("\nApply this due date? (y/n/q): ").lower().strip()
+                if choice in ['y', 'yes']:
+                    approved_updates.append(suggestion)
+                    print("✅ Approved")
+                    break
+                elif choice in ['n', 'no']:
+                    print("⏭️  Skipped")
+                    break
+                elif choice in ['q', 'quit']:
+                    print("\n🛑 Exiting scheduling...")
+                    if approved_updates:
+                        print(f"Will apply {len(approved_updates)} approved dates")
+                    break
+                else:
+                    print("Please answer 'y', 'n', or 'q'")
+
+            if choice in ['q', 'quit']:
+                break
+
+        # Apply approved updates
+        if approved_updates:
+            print(f"\n{'='*70}")
+            print(f"Applying {len(approved_updates)} due date(s)...")
+            print('='*70)
+
+            success_count = 0
+            for update in approved_updates:
+                task_id = update["task_id"]
+                due_date = update["suggested_date"]
+
+                # Apply update
+                success = self.agent.client.update_task(task_id, {"due_date": due_date})
+                if success:
+                    success_count += 1
+                    print(f"✅ {update['task_content'][:50]}... → {due_date}")
+                else:
+                    print(f"❌ Failed: {update['task_content'][:50]}...")
+
+            print(f"\n✅ Successfully added {success_count}/{len(approved_updates)} due dates!")
+        else:
+            print("\n❌ No due dates were applied.")
+
+    def _handle_schedule(self, params: Dict[str, Any]):
+        """Handle old schedule_tasks intent - redirect to new handler."""
+        # Redirect to new handler for backward compatibility
+        return self._handle_schedule_due_dates(params)
 
     def _handle_categorize(self, params: Dict[str, Any]):
         """Handle categorize_tasks intent."""
         quadrant = params.get("quadrant")
+
+        # Handle "all" as None
+        if quadrant and quadrant.lower() == "all":
+            quadrant = None
 
         print("Categorizing tasks by Eisenhower matrix...\n")
 
@@ -228,12 +338,30 @@ class TodoistChatAgent:
             else:
                 print("\nNo tasks in this quadrant")
         else:
+            # Show all quadrants with tasks
+            all_quadrants = result.get("all_quadrants", {})
             stats = result.get("statistics", {})
-            print("Task Distribution:")
-            print(f"  🔥 Q1 (Do First): {stats.get('q1_count', 0)}")
-            print(f"  📆 Q2 (Schedule): {stats.get('q2_count', 0)}")
-            print(f"  👥 Q3 (Delegate): {stats.get('q3_count', 0)}")
-            print(f"  🗑️ Q4 (Consider): {stats.get('q4_count', 0)}")
+
+            quadrant_info = [
+                ("Q1_do_first", "🔥 DO FIRST (Urgent & Important)", stats.get('q1_count', 0)),
+                ("Q2_schedule", "📆 SCHEDULE (Important, Not Urgent)", stats.get('q2_count', 0)),
+                ("Q3_delegate", "👥 DELEGATE (Urgent, Not Important)", stats.get('q3_count', 0)),
+                ("Q4_consider", "🗑️ ELIMINATE/MINIMIZE (Neither Urgent nor Important)", stats.get('q4_count', 0))
+            ]
+
+            for key, name, count in quadrant_info:
+                tasks = all_quadrants.get(key, [])
+                print(f"\n{name}")
+                print("=" * 70)
+                if tasks:
+                    for i, task in enumerate(tasks[:5], 1):  # Show first 5
+                        print(f"{i}. {task['task_content']}")
+                        print(f"   Priority Score: {task['priority_score']}/100")
+                    if len(tasks) > 5:
+                        print(f"   ... and {len(tasks) - 5} more")
+                else:
+                    print("   No tasks")
+                print()
 
     def _display_today_tasks(self, data: Dict[str, Any]):
         """Display today's tasks in a formatted way."""
@@ -368,11 +496,28 @@ class TodoistChatAgent:
         tasks_to_polish = self._identify_tasks_for_polish(task_identifier, count)
 
         if not tasks_to_polish:
-            print(f"❌ Could not find tasks matching: '{task_identifier}'")
+            print(f"❌ Could not find tasks matching: '{task_identifier}'\n")
+
+            # Show helpful suggestions
             if self.last_shown_tasks:
-                print(f"💡 Try: 'polish these {len(self.last_shown_tasks)} tasks' or 'polish the first task'")
+                print(f"Recently shown tasks:")
+                for i, task in enumerate(self.last_shown_tasks[:5], 1):
+                    print(f"  {i}. {task.get('content', '')}")
+                print(f"\n💡 Try: 'polish the first task' or 'polish these tasks'")
             else:
-                print("💡 Tip: First show tasks (e.g., 'show all tasks'), then polish them")
+                # Show all tasks
+                all_tasks = self.agent.client.fetch_tasks()
+                print(f"Available tasks:")
+                for i, task in enumerate(all_tasks[:10], 1):
+                    content = task.get('content', '')
+                    # Truncate long task names
+                    if len(content) > 60:
+                        content = content[:57] + "..."
+                    print(f"  {i}. {content}")
+                if len(all_tasks) > 10:
+                    print(f"  ... and {len(all_tasks) - 10} more")
+                print("\n💡 Tip: First show tasks (e.g., 'show all tasks'), then polish them")
+                print("   Or be more specific: 'polish [task name]'")
             return
 
         print(f"🎨 Polishing {len(tasks_to_polish)} task(s)...\n")
@@ -472,6 +617,111 @@ class TodoistChatAgent:
                 print(f"  • {label}")
             print("=" * 70)
 
+        elif action == "suggest":
+            # Suggest labels for tasks without labels
+            tasks_without_labels = [t for t in all_tasks if not t.get("labels")]
+
+            if not tasks_without_labels:
+                print("✅ All tasks already have labels!")
+                return
+
+            print(f"🏷️  Found {len(tasks_without_labels)} tasks without labels\n")
+
+            # Get existing labels for suggestions
+            existing_labels = set()
+            for task in all_tasks:
+                existing_labels.update(task.get("labels", []))
+
+            print(f"Existing labels: {', '.join(sorted(existing_labels))}\n")
+            print("=" * 70)
+
+            # Generate suggestions for each task
+            from openai import OpenAI
+            import os
+            client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
+
+            approved_updates = []
+            for i, task in enumerate(tasks_without_labels, 1):
+                content = task.get("content", "")
+                description = task.get("description", "")
+
+                print(f"\nTask {i}/{len(tasks_without_labels)}")
+                print(f"📝 {content}")
+                if description:
+                    print(f"   {description[:100]}")
+
+                # Ask AI to suggest labels
+                prompt = f"""Suggest 1-2 relevant labels for this task. Prefer existing labels if appropriate.
+
+Task: "{content}"
+Description: "{description or '(none)'}"
+
+Existing labels: {', '.join(sorted(existing_labels)) if existing_labels else '(none)'}
+
+Return ONLY a JSON object:
+{{
+  "labels": ["label1", "label2"],
+  "reasoning": "Brief explanation"
+}}
+
+Prefer existing labels. Only create new labels if necessary. Keep labels short and lowercase."""
+
+                try:
+                    response = client.chat.completions.create(
+                        model=os.getenv("OPENAI_MODEL", "gpt-4o-mini"),
+                        max_tokens=256,
+                        messages=[{"role": "user", "content": prompt}],
+                        response_format={"type": "json_object"}
+                    )
+
+                    import json
+                    result = json.loads(response.choices[0].message.content)
+                    suggested_labels = result.get("labels", [])
+                    reasoning = result.get("reasoning", "")
+
+                    print(f"💡 Suggested: {', '.join(suggested_labels)}")
+                    print(f"   Reasoning: {reasoning}")
+
+                    choice = input("\nApply these labels? (y/n/q): ").lower().strip()
+                    if choice in ['y', 'yes']:
+                        approved_updates.append({
+                            "task_id": task.get("id"),
+                            "task_content": content,
+                            "labels": suggested_labels
+                        })
+                        print("✅ Approved")
+                    elif choice in ['q', 'quit']:
+                        print("\n⏸️  Stopped label suggestions")
+                        break
+                    else:
+                        print("⏭️  Skipped")
+
+                except Exception as e:
+                    print(f"❌ Error generating suggestion: {e}")
+                    continue
+
+            # Apply approved updates
+            if approved_updates:
+                print(f"\n{'='*70}")
+                print(f"Applying {len(approved_updates)} label updates...")
+                print('='*70)
+
+                success_count = 0
+                for update in approved_updates:
+                    task_id = update["task_id"]
+                    labels = update["labels"]
+
+                    success = self.agent.client.update_task(task_id, {"labels": labels})
+                    if success:
+                        success_count += 1
+                        print(f"✅ Updated: {update['task_content'][:50]} -> {', '.join(labels)}")
+                    else:
+                        print(f"❌ Failed: {update['task_content'][:50]}")
+
+                print(f"\n✨ Successfully updated {success_count}/{len(approved_updates)} tasks")
+            else:
+                print("\nNo labels were added.")
+
     def _identify_task(self, identifier: str) -> Optional[Dict[str, Any]]:
         """
         Identify a task from user input.
@@ -495,34 +745,51 @@ class TodoistChatAgent:
         # Common stop words to ignore in matching
         stop_words = {'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
                      'of', 'with', 'by', 'from', 'as', 'is', 'was', 'are', 'be', 'been',
-                     'how', 'its', 'it', 'this', 'that', 'these', 'those'}
+                     'how', 'its', 'it', 'this', 'that', 'these', 'those', 'help', 'me', 'my'}
 
-        # Try to match from recently shown tasks first (for better context)
+        # Try exact substring match first (highest confidence)
+        # Try recently shown tasks first (for better context)
         for task in self.last_shown_tasks:
             task_content_lower = task.get("content", "").lower()
-            # Match if identifier is a substring of task name
             if identifier_lower in task_content_lower:
                 return task
-            # Also try matching key words (e.g., "amazon" matches "Amazon account unblock")
-            identifier_words = [w for w in identifier_lower.split() if w not in stop_words and len(w) > 2]
-            if len(identifier_words) >= 2:
-                # Match if at least 2 significant words from identifier appear in task name
-                matches = sum(1 for word in identifier_words if word in task_content_lower)
-                if matches >= min(2, len(identifier_words)):
-                    return task
 
-        # Try to match from all tasks
+        # Try all tasks for exact substring match
         all_tasks = self.agent.client.fetch_tasks()
         for task in all_tasks:
             task_content_lower = task.get("content", "").lower()
             if identifier_lower in task_content_lower:
                 return task
-            # Try multi-word matching
-            identifier_words = [w for w in identifier_lower.split() if w not in stop_words and len(w) > 2]
-            if len(identifier_words) >= 2:
+
+        # Try multi-word matching (lower confidence)
+        # Only do this if identifier has at least 2 significant words
+        identifier_words = [w for w in identifier_lower.split() if w not in stop_words and len(w) > 2]
+        if len(identifier_words) >= 2:
+            # Try recently shown tasks
+            best_match = None
+            best_score = 0
+            for task in self.last_shown_tasks:
+                task_content_lower = task.get("content", "").lower()
                 matches = sum(1 for word in identifier_words if word in task_content_lower)
-                if matches >= min(2, len(identifier_words)):
-                    return task
+                # Require ALL identifier words to match (not just 2)
+                if matches == len(identifier_words) and matches > best_score:
+                    best_match = task
+                    best_score = matches
+
+            if best_match:
+                return best_match
+
+            # Try all tasks
+            for task in all_tasks:
+                task_content_lower = task.get("content", "").lower()
+                matches = sum(1 for word in identifier_words if word in task_content_lower)
+                # Require ALL identifier words to match (not just 2)
+                if matches == len(identifier_words) and matches > best_score:
+                    best_match = task
+                    best_score = matches
+
+            if best_match:
+                return best_match
 
         return None
 
@@ -625,6 +892,86 @@ class TodoistChatAgent:
             "get_help": {}
         }
         return defaults.get(intent, {})
+
+    def _load_history(self):
+        """Load conversation history from file."""
+        try:
+            if self.history_file.exists():
+                with open(self.history_file, 'r') as f:
+                    data = json.load(f)
+                    # Restore router's conversation history
+                    self.router.conversation_history = data.get("conversation_history", [])
+                    print(f"📚 Loaded {len(self.router.conversation_history)//2} previous conversations")
+        except Exception as e:
+            print(f"⚠️  Could not load history: {e}")
+
+    def _save_history(self):
+        """Save conversation history to file."""
+        try:
+            data = {
+                "conversation_history": self.router.conversation_history,
+                "last_updated": datetime.now().isoformat()
+            }
+            with open(self.history_file, 'w') as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"⚠️  Could not save history: {e}")
+
+    def _conversational_fallback(self, user_input: str) -> str:
+        """
+        When no function matches, have an intelligent conversation.
+
+        Args:
+            user_input: User's input
+
+        Returns:
+            AI-generated response
+        """
+        # Build context about available capabilities
+        system_context = """You are a helpful Todoist task management assistant.
+
+You have these capabilities:
+- Show tasks (today, all, overdue, upcoming, tasks without due dates)
+- Prioritize tasks using Eisenhower matrix
+- Polish/improve task names and descriptions
+- Suggest due dates for tasks
+- Categorize tasks by urgency/importance
+- Analyze and manage task labels
+- Update individual task properties
+
+When the user asks something you can't directly do:
+1. Try to understand what they want
+2. Ask clarifying questions
+3. Suggest how you CAN help them achieve their goal
+4. Be friendly and conversational
+
+Important: Don't make up capabilities you don't have. If unsure, ask the user to clarify or suggest alternatives."""
+
+        # Get last few messages for context
+        recent_history = self.router.conversation_history[-6:] if self.router.conversation_history else []
+
+        messages = [{"role": "system", "content": system_context}]
+        messages.extend(recent_history)
+        messages.append({"role": "user", "content": user_input})
+
+        try:
+            response = self.openai_client.chat.completions.create(
+                model=self.openai_model,
+                messages=messages,
+                max_tokens=300,
+                temperature=0.7
+            )
+
+            ai_response = response.choices[0].message.content
+
+            # Save to history
+            self.router.add_to_history(user_input, ai_response)
+            self._save_history()
+
+            return ai_response
+
+        except Exception as e:
+            return f"I'm having trouble understanding that. Could you try rephrasing? (Error: {e})\n\nType 'help' to see what I can do!"
 
     def _print_welcome(self):
         """Print welcome message."""
