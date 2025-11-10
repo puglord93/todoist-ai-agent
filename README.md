@@ -1,243 +1,355 @@
 # Todoist AI Agent
 
-An intelligent assistant powered by OpenAI that helps manage your Todoist tasks through natural language conversation, smart prioritization, and AI-powered task improvements.
+<div align="center">
 
-## Features
+**Intelligent task management powered by AI**
 
-- **Conversational Chat Interface** (NEW!): Talk to your tasks in natural language - powered by OpenAI GPT-4o-mini
-- **Task Analysis**: Evaluates tasks based on urgency, importance, and labels
-- **Smart Prioritization**: Uses the Eisenhower Matrix and other heuristics
-- **Daily Focus Plans**: Generates actionable daily task lists
-- **AI-Powered Task Polishing**: OpenAI improves vague task names and descriptions
-- **Smart Due Date Inference**: AI suggests due dates based on task content
-- **Task Quality Scoring**: Identify tasks needing attention (0-100 score)
-- **Label Management** (NEW!): Analyze label usage and identify insignificant labels
-- **Interactive Workflow**: Review and approve AI suggestions before applying
+An adaptive agent that understands your goals, learns your preferences, and helps you manage tasks intelligently through natural conversation.
 
-## Setup
+[![Python 3.8+](https://img.shields.io/badge/python-3.8+-blue.svg)](https://www.python.org/downloads/)
+[![OpenAI](https://img.shields.io/badge/OpenAI-GPT--4o--mini-green.svg)](https://openai.com)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-1. **Install dependencies:**
+</div>
+
+---
+
+## ✨ What It Does
+
+Transform your Todoist from a simple task list into an **intelligent assistant** that:
+
+- 🗣️ **Converses naturally** - Just say what you want to achieve
+- 🧠 **Understands context** - Adapts to your situation and preferences
+- 📊 **Analyzes intelligently** - Prioritizes using Eisenhower Matrix + AI
+- ✨ **Polishes tasks** - AI improves vague names and descriptions
+- 📅 **Plans strategically** - Creates realistic, personalized plans
+- 🤖 **Learns & adapts** - Gets better based on your behavior
+- 📧 **Daily briefings** - Context-aware morning digests
+
+**Example:** Say *"I'm overwhelmed"* → Agent creates a calming, realistic plan tailored to your situation.
+
+---
+
+## 🚀 Quick Start
+
+### 1. Install Dependencies
 ```bash
-cd todoist-ai-agent
-python3 -m venv venv
-source venv/bin/activate
 pip install -r requirements.txt
 ```
 
-2. **Configure API keys:**
-
-Create a `.env` file in the project root:
+### 2. Configure API Keys
 ```bash
-# Required: OpenAI API for natural language processing
-OPENAI_API_KEY="your-openai-api-key-here"
+# Copy the example
+cp .env.example .env
 
-# Required: Todoist API for task management
-TODOIST_API_TOKEN="your-todoist-api-token-here"
-
-# Optional: OpenAI model (defaults to gpt-4o-mini)
-OPENAI_MODEL="gpt-4o-mini"
+# Edit .env with your keys:
+# - OPENAI_API_KEY: https://platform.openai.com/api-keys
+# - TODOIST_API_TOKEN: https://todoist.com/app/settings/integrations
 ```
 
-**Get your API keys:**
-- **OpenAI API**: Get from [platform.openai.com/api-keys](https://platform.openai.com/api-keys)
-- **Todoist API**: Get from [todoist.com/app/settings/integrations/developer](https://todoist.com/app/settings/integrations/developer)
-
-## Usage
-
-### Conversational Chat Interface (RECOMMENDED!)
-The easiest way to interact with your tasks:
+### 3. Start the Agent
 ```bash
-venv/bin/python3 chat.py
+python planner_agent.py
 ```
 
-Natural language examples:
-- "show today's tasks" or just `show`
-- "prioritize my tasks" or just `p`
-- "which tasks need polishing?" or `polish my tasks`
-- "polish the first task" or "polish Amazon and Kwang IBKR"
-- "polish the tasks 1) research kwang 2) resubmit docs" (numbered lists!)
-- "polish these tasks" (after showing tasks)
-- "analyze my labels" or "show label usage"
-- "help me add due dates" or just `schedule`
-- "categorize tasks" or just `categorize`
+**That's it!** Now just talk naturally:
+- *"Help me plan my day"*
+- *"I'm overwhelmed, what should I focus on?"*
+- *"Clean up my task list"*
 
-Features:
-- **Context-aware**: Remember recently shown tasks ("polish these tasks")
-- **Fuzzy matching**: "Amazon unblock" matches "Amazon account unblock - resubmit..."
-- **Stop word filtering**: Ignores common words like "the", "to", "from" for accurate matching
-- **Numbered list support**: "polish 1) task one 2) task two" works perfectly
-- **Helpful feedback**: Clear error messages with suggestions
-- **Label analytics**: Find and consolidate insignificant labels
-- **Manual label control**: Polisher won't add labels automatically
+---
 
-### Automated Daily Briefing (NEW!)
-Get your tasks delivered automatically every morning:
+## 🎯 Two Ways to Use
+
+### 🤖 Agent-Based (Recommended)
+
+**Natural, intelligent, adaptive**
+
 ```bash
-# Test the briefing
-venv/bin/python3 daily_briefing.py --test
+python planner_agent.py
+```
 
-# Set up cron for daily automation
+**Features:**
+- Goal-driven conversation
+- Adapts to your situation
+- Multi-step reasoning
+- Learns from feedback
+- Context-aware responses
+
+### ⚙️ Original System (Still Available)
+
+**Deterministic, script-based**
+
+```bash
+python chat.py          # Original chat interface
+python main.py          # CLI interface
+python daily_briefing.py # Automated briefing
+```
+
+**Both systems work with the same Todoist data - use whichever you prefer!**
+
+---
+
+## 📁 Project Structure
+
+```
+todoist-ai-agent/
+│
+├── 🤖 Core Agent System
+│   ├── planner_agent.py           # AI planner with tool-calling
+│   ├── tools_registry.py          # Tools the agent can use
+│   ├── user_profile_manager.py    # Learns from user behavior
+│   └── agent.py                   # Original orchestrator
+│
+├── 📋 Task Intelligence
+│   ├── task_analyzer.py          # Eisenhower Matrix analysis
+│   ├── task_polisher.py          # AI task enhancement
+│   ├── smart_scheduler.py        # Due date inference
+│   └── prioritizer.py            # Focus plan generation
+│
+├── 🗣️ User Interfaces
+│   ├── chat.py                   # Original chat (CLI)
+│   ├── main.py                   # Command-line interface
+│   ├── today.py                  # Quick today's tasks
+│   └── list_tasks.py             # List all tasks
+│
+├── 📧 Daily Automation
+│   ├── daily_agent_briefing.py   # AI-driven briefing
+│   ├── daily_briefing.py         # Original briefing
+│   └── auto_polish.py            # Automated polishing
+│
+├── 📚 Documentation
+│   ├── docs/user-guide/          # User guides and tutorials
+│   ├── docs/architecture/        # Technical documentation
+│   └── docs/features/            # Feature deep-dives
+│
+└── 🎓 Examples
+    ├── advanced_planning_examples.py  # Complex scenarios
+    ├── pattern_comparison.py          # Old vs new patterns
+    └── ...                            # More examples
+```
+
+---
+
+## 🎮 How to Use
+
+### Daily Planning
+```bash
+python planner_agent.py
+# Say: "Help me plan my afternoon" or "What should I focus on today?"
+```
+
+### Task Cleanup
+```bash
+python planner_agent.py
+# Say: "My tasks feel messy" or "Polish my task names"
+```
+
+### Check Today's Tasks
+```bash
+python today.py
+```
+
+### List All Tasks
+```bash
+python list_tasks.py
+```
+
+### Automated Daily Briefing
+```bash
+# Set up cron job for 8 AM daily
+./setup_agent_cron.sh
+
+# Or use original
 ./setup_cron.sh
 ```
 
-The briefing includes:
-- Overdue and due today tasks
-- AI-generated focus plan (top 5 priorities)
-- Task quality summary
-- Saved to `~/todoist_briefing.txt` by default
+---
 
-**Access from Windows:**
+## 📖 Documentation
+
+**Comprehensive guides in the `docs/` directory:**
+
+### For Users
+- 📘 **[Quick Start Guide](docs/user-guide/quick-start.md)** - Get up and running
+- 💬 **[Chat Usage](docs/user-guide/chat-usage.md)** - Conversational interface guide
+- 📝 **[Quick Reference](docs/user-guide/quick-reference.md)** - Command reference
+- 🔧 **[Standalone Usage](docs/user-guide/standalone-usage.md)** - Script usage
+
+### For Developers
+- 🏗️ **[Architecture Evolution](docs/architecture/evolution.md)** - Logic app → Agent transformation
+- 📊 **[Project Structure](docs/architecture/structure.md)** - System design
+- 📋 **[Implementation Summary](docs/architecture/summary.md)** - Complete overview
+
+### Feature Deep Dives
+- 📧 **[Briefing Evolution](docs/features/briefing-evolution.md)** - Static → AI briefings
+- ✨ **[Polishing Features](docs/features/polish-features.md)** - Task improvement
+- 🔌 **[MCP Integration](docs/features/mcp-integration.md)** - Model Context Protocol
+
+---
+
+## 🧪 Try Examples
+
+### See Agent Capabilities
 ```bash
-# Via SSH
-ssh your-mac "cat ~/todoist_briefing.txt"
-
-# Or save to Dropbox/Google Drive
-# Set BRIEFING_OUTPUT_PATH=~/Dropbox/todoist_briefing.txt in .env
+python examples/advanced_planning_examples.py --mock
 ```
 
-### Automated Task Polishing (NEW!)
-Automatically improve low-quality tasks on schedule:
+### Compare Old vs New Patterns
 ```bash
-# Test with dry-run first (preview only, no changes)
-venv/bin/python3 auto_polish.py --dry-run
-
-# Enable in .env
-AUTO_POLISH_ENABLED=true
-
-# Set up cron automation
-./setup_cron.sh
-# Choose option 2 (Auto-polish) or 3 (Both)
+python examples/pattern_comparison.py
 ```
 
-**Safety Features:**
-- Only polishes tasks below quality threshold (default: 40%)
-- Rate limited (max 5 tasks per run by default)
-- Detailed audit logging with rollback data
-- Dry-run mode for safe testing
-
-**Configuration in .env:**
+### Test Polishing
 ```bash
-AUTO_POLISH_ENABLED=true              # Enable/disable
-AUTO_POLISH_QUALITY_THRESHOLD=40      # Only polish tasks below 40%
-AUTO_POLISH_MAX_TASKS=5               # Max tasks per run
-AUTO_POLISH_LOG_PATH=~/todoist_auto_polish.log
+python examples/test_polish_standalone.py
 ```
 
-### Quick CLI Tools
+---
+
+## 🏗️ Architecture Highlights
+
+### The Evolution: Logic App → Agent
+
+**Old System (Logic App):**
+- Fixed pipelines (fetch → analyze → prioritize)
+- Command-based ("polish tasks")
+- Same behavior for everyone
+
+**New System (Agent):**
+- AI decides flow ("I'm overwhelmed")
+- Goal-driven conversation
+- Adapts to you personally
+
+### Key Components
+
+1. **PlannerAgent** - AI brain that decides what to do
+2. **Tools Registry** - 13+ tools the agent can use
+3. **User Profile** - Learns your preferences
+4. **Original Modules** - All wrapped as tools
+
+**Result:** A true AI agent that understands goals, not just commands!
+
+---
+
+## ⚙️ Configuration
+
+### Environment Variables
+
 ```bash
-# View today's tasks (overdue, due today, upcoming)
-venv/bin/python3 today.py
+# Required
+OPENAI_API_KEY=sk-...
+TODOIST_API_TOKEN=...
 
-# List all tasks
-venv/bin/python3 list_tasks.py
-
-# Generate daily briefing
-venv/bin/python3 daily_briefing.py
+# Optional
+OPENAI_MODEL=gpt-4o-mini
+BRIEFING_EMAIL=your@email.com
+BRIEFING_SMTP_HOST=smtp.gmail.com
+BRIEFING_SMTP_PORT=587
+BRIEFING_SMTP_USER=your@email.com
+BRIEFING_SMTP_PASS=app_password
 ```
 
-### Advanced Usage
+### User Profile
 
-**With Mock Data (for testing):**
+The agent learns from your behavior and stores preferences in:
+- `~/.todoist_agent_profile.json` - Your preferences
+- `~/.todoist_agent_interactions.json` - Interaction history
+- `~/.todoist_agent_completions.json` - Task completion patterns
+
+---
+
+## 🔧 Troubleshooting
+
+**Agent doesn't start?**
 ```bash
-./run.sh --mock
-./run.sh --mock --full    # Full report
-./run.sh --mock --top 3   # Top 3 priorities
+# Check your .env file
+cat .env
+
+# Verify API keys work
+python -c "import openai; openai.OpenAI()"
 ```
 
-**Direct CLI (legacy):**
+**Using mock data for testing:**
 ```bash
-venv/bin/python3 main.py              # Generate focus plan
-venv/bin/python3 main.py --full       # Full report
-venv/bin/python3 main.py --top 3      # Top 3 priorities
+python planner_agent.py --mock
+python daily_agent_briefing.py --mock
 ```
 
-### Polish Your Tasks
-```bash
-# Interactive workflow - polish names, add descriptions, suggest due dates
-./interactive_polish.py
-
-# Test with mock data first
-./interactive_polish.py --mock
-
-# Only polish task names/descriptions
-./interactive_polish.py --mode polish
-
-# Only suggest due dates
-./interactive_polish.py --mode schedule
+**Reset conversation:**
+```
+💬 In chat: reset
 ```
 
-**See [POLISH_FEATURES.md](POLISH_FEATURES.md) for detailed polish features guide.**
+**View session status:**
+```
+💬 In chat: status
+```
 
-## Architecture
+---
 
-### Core Engine
-- `todoist_client.py`: Interface for Todoist API operations
-- `task_analyzer.py`: Task analysis and scoring logic
-- `prioritizer.py`: Prioritization algorithms and focus plan generation
-- `agent.py`: Main agent orchestrator
+## 📊 System Requirements
 
-### Conversational Interface (OpenAI-powered)
-- `chat.py`: Natural language chat interface (RECOMMENDED!)
-- `intent_router.py`: OpenAI GPT-4o-mini for intent detection and routing
-- `task_updater.py`: Safe task updates with preview and rollback
+- **Python 3.8+**
+- **OpenAI API key** (for AI features)
+- **Todoist API token** (for task access)
+- 4GB RAM recommended
+- Internet connection (for API calls)
 
-### AI Features (OpenAI-powered)
-- `task_polisher.py`: OpenAI-powered task name/description enhancement
-- `smart_scheduler.py`: Due date inference from task content
-- `interactive_polish.py`: Interactive workflow for reviewing AI suggestions
-- `mcp_updater.py`: Update formatting helpers (legacy MCP support)
+---
 
-### Automation & Entry Points
-- `chat.py`: Conversational CLI interface
-- `today.py`: Quick today's tasks view
-- `daily_briefing.py`: Automated daily briefing (NEW!)
-- `auto_polish.py`: Automated task polishing (NEW!)
-- `setup_cron.sh`: Cron automation setup helper (NEW!)
-- `main.py`: CLI for analysis and prioritization
-- `interactive_polish.py`: CLI for task polishing workflow
+## 🎯 Common Use Cases
 
-## Recent Updates
+| Goal | How to Use |
+|------|------------|
+| **Daily planning** | `python planner_agent.py` → "Plan my day" |
+| **Task cleanup** | `python planner_agent.py` → "Clean up my list" |
+| **Quick view** | `python today.py` |
+| **Weekly review** | `python planner_agent.py` → "Plan my week strategically" |
+| **Overwhelmed** | `python planner_agent.py` → "I'm overwhelmed" |
+| **Morning briefing** | Cron: `python daily_agent_briefing.py` |
+| **Automated polish** | Cron: `python auto_polish.py` |
 
-### 2024-11 - OpenAI Migration & Enhanced Chat Interface
+---
 
-#### Latest Improvements (Nov 2024)
-- ✅ **Conversation History Persistence** - Chat history saved across sessions to `~/.todoist_chat_history.json`
-- ✅ **Intelligent Conversational Fallback** - OpenAI-powered responses for edge cases and unclear requests
-- ✅ **Enhanced Error Handling** - Graceful recovery from errors with helpful AI suggestions
-- ✅ **Interactive Due Date Scheduling** - AI suggestions with reasoning, confidence, and approval flow
-- ✅ **AI Label Suggestions** - Smart label recommendations for unlabeled tasks with reasoning
-- ✅ **Automated Task Polishing** - Scheduled automatic improvements for low-quality tasks with safety features
-- ✅ **Automated Daily Briefing** - Cron-scheduled morning reports with focus plan and quality summary
-- ✅ **Stop Word Filtering** - Ignores common words ("to", "from", "the", "how") for more accurate task matching
-- ✅ **Numbered List Support** - Parse "polish 1) task one 2) task two" format correctly
-- ✅ **Intent Routing Fixed** - Clear separation between quality reports and actual polishing actions
-- ✅ **Label Control** - Disabled automatic label generation; users maintain full control over manual labeling
-- ✅ **Multi-Word Matching** - Only significant words count for fuzzy matching (2+ chars, no stop words)
-- ✅ **Better Error Messages** - Shows what was searched for, suggests recently shown tasks
+## 🤝 Contributing
 
-#### Core Features (Nov 2024)
-- ✅ **OpenAI Integration** - Migrated from Anthropic to OpenAI GPT-4o-mini
-- ✅ **Direct Todoist API** - Standalone operation without MCP dependency
-- ✅ **Fuzzy Task Matching** - Multi-word matching, partial names work better
-- ✅ **Contextual References** - "polish these tasks" after showing tasks
-- ✅ **Label Management** - Analyze label usage and identify insignificant labels
-- ✅ **Improved Feedback** - Clearer error messages with suggestions
+This is a personal AI assistant project. Feel free to:
+- Fork and adapt to your needs
+- Submit issues for bugs
+- Suggest improvements
 
-### 2024-10 - Initial Release
-- ✅ **AI-Powered Task Polishing** - Clean up task names and descriptions
-- ✅ **Smart Due Date Inference** - Auto-suggest due dates from content
-- ✅ **Task Quality Scoring** - Identify tasks needing improvement
-- ✅ **Interactive Update Workflow** - Review before applying changes
-- ✅ **Conversational Interface** - Natural language chat with tasks
+---
 
-## Future Enhancements
+## 📄 License
 
-- [x] ~~Automated daily morning briefing~~ **DONE!** (Nov 2024)
-- [x] ~~Cron schedule for daily automation~~ **DONE!** (Nov 2024)
-- [x] ~~Automated task polishing on schedule~~ **DONE!** (Nov 2024)
-- [x] ~~Conversation history persistence~~ **DONE!** (Nov 2024)
-- [ ] Weekly retrospective and velocity tracking
-- [ ] Slack/Telegram integration for notifications
-- [ ] Web dashboard for remote access
-- [ ] Google Calendar integration
-- [ ] Automatic task breakdown for large projects
+MIT License - see LICENSE file for details
+
+---
+
+## 🙏 Acknowledgments
+
+- **OpenAI** - GPT-4o-mini for intelligence
+- **Todoist** - Task management platform
+- **Python** - Amazing programming language
+
+---
+
+## 🚀 Next Steps
+
+1. **Try the agent:** `python planner_agent.py`
+2. **Set up daily briefings:** `./setup_agent_cron.sh`
+3. **Read the guides:** `docs/user-guide/`
+4. **Explore examples:** `examples/`
+
+**Happy task managing! 🎉**
+
+---
+
+<div align="center">
+
+**[Website](https://github.com/puglord93/todoist-ai-agent)** •
+**[Documentation](docs/)** •
+**[Examples](examples/)**
+
+</div>
