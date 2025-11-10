@@ -34,6 +34,17 @@ Transform your Todoist from a simple task list into an **intelligent assistant**
 
 ### 1. Install Dependencies
 ```bash
+# Create virtual environment
+python -m venv venv
+
+# Activate virtual environment:
+# On macOS/Linux:
+source venv/bin/activate
+
+# On Windows:
+# venv\Scripts\activate
+
+# Install dependencies
 pip install -r requirements.txt
 ```
 
@@ -49,19 +60,28 @@ cp .env.example .env
 
 ### 3. Start the Agent
 ```bash
+# Activate virtual environment (if not already activated)
+# On macOS/Linux:
+source venv/bin/activate
+
+# On Windows:
+# venv\Scripts\activate
+
+# Run the agent
 python planner_agent.py
 ```
 
-**That's it!** Now just talk naturally:
+**That's it!** Just tell the agent what you need:
+- *"What should I focus on today?"*
 - *"Help me plan my day"*
-- *"I'm overwhelmed, what should I focus on?"*
+- *"I'm overwhelmed, what should I do?"*
 - *"Clean up my task list"*
 
 ---
 
-## 🎯 Two Ways to Use
+## 🎯 One Intelligent System
 
-### 🤖 Agent-Based (Recommended)
+### 🤖 AI Agent
 
 **Natural, intelligent, adaptive**
 
@@ -69,24 +89,14 @@ python planner_agent.py
 python planner_agent.py
 ```
 
-**Features:**
-- Goal-driven conversation
-- Adapts to your situation
-- Multi-step reasoning
-- Learns from feedback
-- Context-aware responses
+The agent has a built-in chat interface and understands natural language. It can:
+- Show today's tasks when you say *"What should I focus on today?"*
+- Plan your day when you say *"Help me plan my day"*
+- Clean up tasks when you say *"Polish my task list"*
+- Analyze and prioritize using AI
+- Learn your preferences over time
 
-### ⚙️ Original System (Still Available)
-
-**Deterministic, script-based**
-
-```bash
-python chat.py          # Original chat interface
-python main.py          # CLI interface
-python daily_briefing.py # Automated briefing
-```
-
-**Both systems work with the same Todoist data - use whichever you prefer!**
+**Everything you need in one program!**
 
 ---
 
@@ -95,28 +105,30 @@ python daily_briefing.py # Automated briefing
 ```
 todoist-ai-agent/
 │
-├── 🤖 Core Agent System
-│   ├── planner_agent.py           # AI planner with tool-calling
+├── 🤖 Main Program
+│   └── planner_agent.py           # Single AI agent with chat interface
+│
+├── 🔧 Core System
 │   ├── tools_registry.py          # Tools the agent can use
 │   ├── user_profile_manager.py    # Learns from user behavior
-│   └── agent.py                   # Original orchestrator
+│   ├── agent.py                   # Task analysis engine
+│   ├── todoist_client.py          # Todoist API integration
+│   └── intent_router.py           # Intent classification
 │
-├── 📋 Task Intelligence
+├── 📋 Task Intelligence Modules
 │   ├── task_analyzer.py          # Eisenhower Matrix analysis
 │   ├── task_polisher.py          # AI task enhancement
 │   ├── smart_scheduler.py        # Due date inference
-│   └── prioritizer.py            # Focus plan generation
-│
-├── 🗣️ User Interfaces
-│   ├── chat.py                   # Original chat (CLI)
-│   ├── main.py                   # Command-line interface
-│   ├── today.py                  # Quick today's tasks
-│   └── list_tasks.py             # List all tasks
+│   ├── prioritizer.py            # Focus plan generation
+│   └── task_updater.py           # Update tasks
 │
 ├── 📧 Daily Automation
-│   ├── daily_agent_briefing.py   # AI-driven briefing
-│   ├── daily_briefing.py         # Original briefing
-│   └── auto_polish.py            # Automated polishing
+│   ├── daily_agent_briefing.py   # AI-driven daily briefing (for cron)
+│   ├── daily_briefing.py         # Original briefing (legacy)
+│   └── auto_polish.py            # Automated polishing (optional)
+│
+├── 🛠️ Utilities
+│   └── list_tasks.py             # Quick task listing (optional)
 │
 ├── 📚 Documentation
 │   ├── docs/user-guide/          # User guides and tutorials
@@ -125,7 +137,7 @@ todoist-ai-agent/
 │
 └── 🎓 Examples
     ├── advanced_planning_examples.py  # Complex scenarios
-    ├── pattern_comparison.py          # Old vs new patterns
+    ├── pattern_comparison.py          # Patterns showcase
     └── ...                            # More examples
 ```
 
@@ -133,35 +145,47 @@ todoist-ai-agent/
 
 ## 🎮 How to Use
 
-### Daily Planning
+### Start the AI Agent
 ```bash
+# Activate virtual environment (macOS/Linux)
+source venv/bin/activate
+
+# Or on Windows:
+# venv\Scripts\activate
+
+# Run the agent
 python planner_agent.py
-# Say: "Help me plan my afternoon" or "What should I focus on today?"
 ```
 
-### Task Cleanup
-```bash
-python planner_agent.py
-# Say: "My tasks feel messy" or "Polish my task names"
-```
+Then just talk naturally! The agent understands:
 
-### Check Today's Tasks
-```bash
-python today.py
-```
+**📅 Daily Planning:**
+- "What should I focus on today?" (replaces today.py)
+- "Help me plan my afternoon"
+- "Show me my priorities for this week"
 
-### List All Tasks
+**🧹 Task Cleanup:**
+- "Clean up my task list"
+- "Polish my task names"
+- "Add due dates to important tasks"
+
+**📊 Analysis:**
+- "Analyze my tasks using Eisenhower Matrix"
+- "Which tasks need improvement?"
+- "Show me overdue tasks"
+
+**💡 Everything is conversational - no commands to remember!**
+
+### Optional Utilities
 ```bash
+# Quick task listing (standalone)
 python list_tasks.py
-```
 
-### Automated Daily Briefing
-```bash
-# Set up cron job for 8 AM daily
+# Automated daily briefing (via cron) - AI-powered
 ./setup_agent_cron.sh
 
-# Or use original
-./setup_cron.sh
+# Legacy cron setup (non-agent based) - deprecated
+# ./setup_cron.sh
 ```
 
 ---
@@ -302,13 +326,15 @@ python daily_agent_briefing.py --mock
 
 | Goal | How to Use |
 |------|------------|
-| **Daily planning** | `python planner_agent.py` → "Plan my day" |
+| **Daily planning** | `python planner_agent.py` → "What should I focus on today?" |
 | **Task cleanup** | `python planner_agent.py` → "Clean up my list" |
-| **Quick view** | `python today.py` |
 | **Weekly review** | `python planner_agent.py` → "Plan my week strategically" |
 | **Overwhelmed** | `python planner_agent.py` → "I'm overwhelmed" |
+| **Quick task list** | `python planner_agent.py` → "Show me all my tasks" |
 | **Morning briefing** | Cron: `python daily_agent_briefing.py` |
-| **Automated polish** | Cron: `python auto_polish.py` |
+| **Task analysis** | `python planner_agent.py` → "Analyze my tasks" |
+
+**Everything through one program - the AI agent!**
 
 ---
 

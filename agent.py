@@ -11,8 +11,14 @@ from task_analyzer import TaskAnalyzer
 from prioritizer import TaskPrioritizer
 from task_polisher import TaskPolisher
 from smart_scheduler import SmartScheduler
-from mcp_updater import MCPUpdater
 from task_updater import TaskUpdater
+
+# Import MCPUpdater from examples (for Claude Code integration)
+try:
+    from examples.mcp_updater import MCPUpdater
+except ImportError:
+    # Fallback if examples not accessible
+    MCPUpdater = None
 
 
 class TodoistAIAgent:
@@ -39,7 +45,8 @@ class TodoistAIAgent:
             self.polisher = None
             self.scheduler = None
 
-        self.updater = MCPUpdater()
+        # Initialize MCPUpdater (may be None if not available)
+        self.updater = MCPUpdater() if MCPUpdater else None
 
     def run_analysis(self) -> Dict[str, Any]:
         """

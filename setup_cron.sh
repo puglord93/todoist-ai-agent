@@ -1,7 +1,10 @@
 #!/bin/bash
 
-# Todoist AI Agent - Daily Briefing Cron Setup
+# Todoist AI Agent - Daily Briefing Cron Setup (Legacy)
 # Interactive script to set up automated daily briefings
+
+# NOTE: This is the legacy setup script. For the new agent-based system,
+# use setup_agent_cron.sh instead!
 
 set -e
 
@@ -16,7 +19,25 @@ NC='\033[0m' # No Color
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 
 echo -e "${BLUE}==========================================${NC}"
-echo -e "${BLUE}Todoist AI Agent - Automation Setup${NC}"
+echo -e "${BLUE}⚠️  LEGACY SCRIPT WARNING${NC}"
+echo -e "${BLUE}==========================================${NC}"
+echo ""
+echo -e "${YELLOW}This script sets up the LEGACY (non-agent) cron jobs.${NC}"
+echo -e "${YELLOW}For the new agent-based system, use:${NC}"
+echo -e "${GREEN}  ./setup_agent_cron.sh${NC}"
+echo ""
+echo "Continue anyway? (y/n)"
+read -r -n 1 -r
+echo ""
+
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo "Cancelled. Use setup_agent_cron.sh for the agent-based system."
+    exit 1
+fi
+
+echo ""
+echo -e "${BLUE}==========================================${NC}"
+echo -e "${BLUE}Todoist AI Agent - Legacy Automation Setup${NC}"
 echo -e "${BLUE}==========================================${NC}"
 echo ""
 echo "This script helps you set up automated cron jobs for:"
@@ -39,7 +60,7 @@ if [ ! -f "$SCRIPT_DIR/daily_briefing.py" ]; then
     exit 1
 fi
 
-echo -e "${GREEN}✅ daily_briefing.py found${NC}"
+echo -e "${GREEN}✅ daily_briefing.py found (legacy)${NC}"
 echo ""
 
 # Test the briefing script
