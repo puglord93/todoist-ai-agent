@@ -269,8 +269,21 @@ class ChatInterface:
                 if not user_input:
                     continue
 
+                # Check for exit commands
                 if user_input.lower() in ['quit', 'exit', 'bye', 'q']:
                     print("\n👋 Goodbye! Your tasks are in good hands.")
+                    break
+
+                # Check for natural language exit signals
+                user_lower = user_input.lower()
+                exit_phrases = [
+                    "that's all", "thats all", "all done", "i'm done", "im done",
+                    "nope that's all", "nope thats all", "that's it", "thats it",
+                    "thanks", "thank you", "no thanks", "nothing else",
+                    "i'm good", "im good", "all good", "no more", "nothing more"
+                ]
+                if any(phrase in user_lower for phrase in exit_phrases):
+                    print("\n👋 Sounds good! Happy task managing!")
                     break
 
                 if user_input.lower() in ['reset', 'clear']:
@@ -315,7 +328,8 @@ class ChatInterface:
         print("  'status' - Show session info")
         print("  'reset' - Clear conversation")
         print("  'help' - Show this message")
-        print("  'quit' - Exit")
+        print("  'quit' / 'exit' - Exit")
+        print("  Or just say: 'that's all', 'thanks', 'I'm done'")
         print("=" * 60)
 
     def _print_help(self):
