@@ -269,20 +269,23 @@ class ChatInterface:
                 if not user_input:
                     continue
 
-                # Check for exit commands
+                # Check for simple exit commands
                 if user_input.lower() in ['quit', 'exit', 'bye', 'q']:
                     print("\n👋 Goodbye! Your tasks are in good hands.")
                     break
 
-                # Check for natural language exit signals
+                # For natural language, let the agent handle everything intelligently
+                # Use a simple heuristic: very short messages with completion words likely mean "done"
                 user_lower = user_input.lower()
-                exit_phrases = [
-                    "that's all", "thats all", "all done", "i'm done", "im done",
-                    "nope that's all", "nope thats all", "that's it", "thats it",
-                    "thanks", "thank you", "no thanks", "nothing else",
-                    "i'm good", "im good", "all good", "no more", "nothing more"
-                ]
-                if any(phrase in user_lower for phrase in exit_phrases):
+                is_short_message = len(user_input) < 40
+                has_completion_words = any(word in user_lower for word in [
+                    'thanks', 'thank you', "that's all", "thats all", "i'm done", "im done",
+                    "all good", "perfect", "that works", "nope", "no thanks"
+                ])
+                is_simple_affirmation = user_lower in ['yes', 'yeah', 'yep', 'ok', 'okay', 'sure']
+
+                if is_short_message and (has_completion_words or is_simple_affirmation):
+                    # Likely a natural conclusion - exit gracefully
                     print("\n👋 Sounds good! Happy task managing!")
                     break
 
@@ -300,7 +303,7 @@ class ChatInterface:
                     print(f"\n📊 Session Status: {json.dumps(summary, indent=2)}")
                     continue
 
-                # Process the request
+                # Process the request - let the agent understand it naturally
                 response = self.agent.handle_request(user_input)
                 print(f"\n🤖 Assistant: {response}")
 
@@ -329,7 +332,7 @@ class ChatInterface:
         print("  'reset' - Clear conversation")
         print("  'help' - Show this message")
         print("  'quit' / 'exit' - Exit")
-        print("  Or just say: 'that's all', 'thanks', 'I'm done'")
+        print("\nOr just speak naturally - I'll understand!")
         print("=" * 60)
 
     def _print_help(self):
